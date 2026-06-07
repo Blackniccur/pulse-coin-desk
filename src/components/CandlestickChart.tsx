@@ -5,14 +5,19 @@ export type Candle = { o: number; h: number; l: number; c: number; t: number };
 function seed(count: number, base: number): Candle[] {
   const out: Candle[] = [];
   let price = base;
-  const now = Date.now();
+  // deterministic seed so SSR and first client render match
+  let s = 1337;
+  const rand = () => {
+    s = (s * 1664525 + 1013904223) % 0x100000000;
+    return s / 0x100000000;
+  };
   for (let i = count; i > 0; i--) {
     const o = price;
     const vol = base * 0.004;
-    const c = o + (Math.random() - 0.48) * vol;
-    const h = Math.max(o, c) + Math.random() * vol * 0.6;
-    const l = Math.min(o, c) - Math.random() * vol * 0.6;
-    out.push({ o, h, l, c, t: now - i * 60_000 });
+    const c = o + (rand() - 0.48) * vol;
+    const h = Math.max(o, c) + rand() * vol * 0.6;
+    const l = Math.min(o, c) - rand() * vol * 0.6;
+    out.push({ o, h, l, c, t: i * 60_000 });
     price = c;
   }
   return out;

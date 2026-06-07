@@ -14,7 +14,247 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          kind: Database["public"]["Enums"]["account_kind"]
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kind: Database["public"]["Enums"]["account_kind"]
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["account_kind"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      price_alerts: {
+        Row: {
+          active: boolean
+          condition: Database["public"]["Enums"]["alert_condition"]
+          created_at: string
+          id: string
+          symbol: string
+          target_price: number
+          triggered_at: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          condition: Database["public"]["Enums"]["alert_condition"]
+          created_at?: string
+          id?: string
+          symbol: string
+          target_price: number
+          triggered_at?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          condition?: Database["public"]["Enums"]["alert_condition"]
+          created_at?: string
+          id?: string
+          symbol?: string
+          target_price?: number
+          triggered_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          active_account: Database["public"]["Enums"]["account_kind"]
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          two_factor_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          active_account?: Database["public"]["Enums"]["account_kind"]
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          two_factor_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          active_account?: Database["public"]["Enums"]["account_kind"]
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          two_factor_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          message: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          message: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          message?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trades: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          pnl: number
+          price: number
+          qty: number
+          side: Database["public"]["Enums"]["trade_side"]
+          status: Database["public"]["Enums"]["trade_status"]
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          pnl?: number
+          price: number
+          qty: number
+          side: Database["public"]["Enums"]["trade_side"]
+          status?: Database["public"]["Enums"]["trade_status"]
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          pnl?: number
+          price?: number
+          qty?: number
+          side?: Database["public"]["Enums"]["trade_side"]
+          status?: Database["public"]["Enums"]["trade_status"]
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trades_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          reference: string | null
+          status: Database["public"]["Enums"]["tx_status"]
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          type: Database["public"]["Enums"]["tx_type"]
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          reference?: string | null
+          status?: Database["public"]["Enums"]["tx_status"]
+          type?: Database["public"]["Enums"]["tx_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +263,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      account_kind: "real" | "demo"
+      alert_condition: "above" | "below"
+      ticket_status: "open" | "pending" | "resolved"
+      trade_side: "buy" | "sell"
+      trade_status: "open" | "closed" | "cancelled"
+      tx_status: "pending" | "completed" | "failed"
+      tx_type: "deposit" | "withdraw"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +396,14 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      account_kind: ["real", "demo"],
+      alert_condition: ["above", "below"],
+      ticket_status: ["open", "pending", "resolved"],
+      trade_side: ["buy", "sell"],
+      trade_status: ["open", "closed", "cancelled"],
+      tx_status: ["pending", "completed", "failed"],
+      tx_type: ["deposit", "withdraw"],
+    },
   },
 } as const

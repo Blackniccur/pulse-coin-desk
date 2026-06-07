@@ -71,6 +71,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Trade crypto in real time. Live candlesticks, instant buy/sell, deposit via Visa, mobile money, or crypto." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { property: "og:title", content: "Vertex — Mobile Crypto Trading" },
+      { name: "twitter:title", content: "Vertex — Mobile Crypto Trading" },
+      { property: "og:description", content: "Trade crypto in real time. Live candlesticks, instant buy/sell, deposit via Visa, mobile money, or crypto." },
+      { name: "twitter:description", content: "Trade crypto in real time. Live candlesticks, instant buy/sell, deposit via Visa, mobile money, or crypto." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/655f90b2-1e32-44de-b646-3bfe4d7f449d" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/655f90b2-1e32-44de-b646-3bfe4d7f449d" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

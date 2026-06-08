@@ -12,12 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedVerificationRouteImport } from './routes/_authenticated/verification'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedEducationRouteImport } from './routes/_authenticated/education'
 import { Route as AuthenticatedCashierRouteImport } from './routes/_authenticated/cashier'
+import { Route as AuthenticatedArbitrageRouteImport } from './routes/_authenticated/arbitrage'
 import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 
 const AuthRoute = AuthRouteImport.update({
@@ -34,6 +36,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVerificationRoute =
+  AuthenticatedVerificationRouteImport.update({
+    id: '/verification',
+    path: '/verification',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -64,6 +72,11 @@ const AuthenticatedCashierRoute = AuthenticatedCashierRouteImport.update({
   path: '/cashier',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedArbitrageRoute = AuthenticatedArbitrageRouteImport.update({
+  id: '/arbitrage',
+  path: '/arbitrage',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
   id: '/alerts',
   path: '/alerts',
@@ -74,22 +87,26 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/alerts': typeof AuthenticatedAlertsRoute
+  '/arbitrage': typeof AuthenticatedArbitrageRoute
   '/cashier': typeof AuthenticatedCashierRoute
   '/education': typeof AuthenticatedEducationRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/security': typeof AuthenticatedSecurityRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/verification': typeof AuthenticatedVerificationRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/alerts': typeof AuthenticatedAlertsRoute
+  '/arbitrage': typeof AuthenticatedArbitrageRoute
   '/cashier': typeof AuthenticatedCashierRoute
   '/education': typeof AuthenticatedEducationRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/security': typeof AuthenticatedSecurityRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/verification': typeof AuthenticatedVerificationRoute
   '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
@@ -97,12 +114,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
+  '/_authenticated/arbitrage': typeof AuthenticatedArbitrageRoute
   '/_authenticated/cashier': typeof AuthenticatedCashierRoute
   '/_authenticated/education': typeof AuthenticatedEducationRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/security': typeof AuthenticatedSecurityRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
+  '/_authenticated/verification': typeof AuthenticatedVerificationRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
@@ -111,34 +130,40 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/alerts'
+    | '/arbitrage'
     | '/cashier'
     | '/education'
     | '/history'
     | '/reports'
     | '/security'
     | '/support'
+    | '/verification'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
     | '/alerts'
+    | '/arbitrage'
     | '/cashier'
     | '/education'
     | '/history'
     | '/reports'
     | '/security'
     | '/support'
+    | '/verification'
     | '/'
   id:
     | '__root__'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/alerts'
+    | '/_authenticated/arbitrage'
     | '/_authenticated/cashier'
     | '/_authenticated/education'
     | '/_authenticated/history'
     | '/_authenticated/reports'
     | '/_authenticated/security'
     | '/_authenticated/support'
+    | '/_authenticated/verification'
     | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
@@ -168,6 +193,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/verification': {
+      id: '/_authenticated/verification'
+      path: '/verification'
+      fullPath: '/verification'
+      preLoaderRoute: typeof AuthenticatedVerificationRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/support': {
@@ -212,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCashierRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/arbitrage': {
+      id: '/_authenticated/arbitrage'
+      path: '/arbitrage'
+      fullPath: '/arbitrage'
+      preLoaderRoute: typeof AuthenticatedArbitrageRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/alerts': {
       id: '/_authenticated/alerts'
       path: '/alerts'
@@ -224,23 +263,27 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
+  AuthenticatedArbitrageRoute: typeof AuthenticatedArbitrageRoute
   AuthenticatedCashierRoute: typeof AuthenticatedCashierRoute
   AuthenticatedEducationRoute: typeof AuthenticatedEducationRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedVerificationRoute: typeof AuthenticatedVerificationRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
+  AuthenticatedArbitrageRoute: AuthenticatedArbitrageRoute,
   AuthenticatedCashierRoute: AuthenticatedCashierRoute,
   AuthenticatedEducationRoute: AuthenticatedEducationRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedVerificationRoute: AuthenticatedVerificationRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
@@ -254,3 +297,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

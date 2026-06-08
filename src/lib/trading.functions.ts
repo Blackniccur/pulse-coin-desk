@@ -34,8 +34,10 @@ export const placeTrade = createServerFn({ method: "POST" })
     z.object({
       symbol: z.string().min(1).max(20),
       side: z.enum(["buy", "sell"]),
-      qty: z.number().positive().max(1000),
+      qty: z.number().positive().max(1_000_000),
       price: z.number().positive(),
+      order_type: z.enum(["market", "limit", "stop"]).default("market"),
+      trigger_price: z.number().positive().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -45,24 +47,33 @@ export const placeTrade = createServerFn({ method: "POST" })
     const { data: acct } = await supabase.from("accounts").select("*").eq("user_id", userId).eq("kind", kind).maybeSingle();
     if (!acct) throw new Error("Account not found");
 
+    const isMarket = data.order_type === "market";
     const cost = data.qty * data.price;
     const balance = Number(acct.balance);
-    if (data.side === "buy" && cost > balance) throw new Error("Insufficient balance");
 
-    const newBalance = data.side === "buy" ? balance - cost : balance + cost;
-    await supabase.from("accounts").update({ balance: newBalance }).eq("id", acct.id);
+    if (isMarket) {
+      if (data.side === "buy" && cost > balance) throw new Error("Insufficient balance");
+      const newBalance = data.side === "buy" ? balance - cost : balance + cost;
+      await supabase.from("accounts").update({ balance: newBalance }).eq("id", acct.id);
+      const { error } = await supabase.from("trades").insert({
+        user_id: userId, account_id: acct.id, symbol: data.symbol, side: data.side,
+        qty: data.qty, price: data.price, status: "closed", order_type: "market",
+      });
+      if (error) throw new Error(error.message);
+      return { ok: true, balance: newBalance };
+    }
+
+    // limit / stop → store as open order, no balance change yet
+    if (!data.trigger_price) throw new Error("Trigger price required");
     const { error } = await supabase.from("trades").insert({
-      user_id: userId,
-      account_id: acct.id,
-      symbol: data.symbol,
-      side: data.side,
-      qty: data.qty,
-      price: data.price,
-      status: "closed",
+      user_id: userId, account_id: acct.id, symbol: data.symbol, side: data.side,
+      qty: data.qty, price: data.price, status: "open",
+      order_type: data.order_type, trigger_price: data.trigger_price,
     });
     if (error) throw new Error(error.message);
-    return { ok: true, balance: newBalance };
+    return { ok: true, balance, pending: true };
   });
+
 
 export const listTrades = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

@@ -169,36 +169,42 @@ export type Database = {
           account_id: string
           created_at: string
           id: string
+          order_type: string
           pnl: number
           price: number
           qty: number
           side: Database["public"]["Enums"]["trade_side"]
           status: Database["public"]["Enums"]["trade_status"]
           symbol: string
+          trigger_price: number | null
           user_id: string
         }
         Insert: {
           account_id: string
           created_at?: string
           id?: string
+          order_type?: string
           pnl?: number
           price: number
           qty: number
           side: Database["public"]["Enums"]["trade_side"]
           status?: Database["public"]["Enums"]["trade_status"]
           symbol: string
+          trigger_price?: number | null
           user_id: string
         }
         Update: {
           account_id?: string
           created_at?: string
           id?: string
+          order_type?: string
           pnl?: number
           price?: number
           qty?: number
           side?: Database["public"]["Enums"]["trade_side"]
           status?: Database["public"]["Enums"]["trade_status"]
           symbol?: string
+          trigger_price?: number | null
           user_id?: string
         }
         Relationships: [

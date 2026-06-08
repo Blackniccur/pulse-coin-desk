@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Menu, X, TrendingUp, History, Wallet, BarChart3, BellRing,
   LifeBuoy, GraduationCap, ShieldCheck, LogOut, Bell, ChevronRight,
+  Bot, FileCheck,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -12,10 +13,12 @@ import { getMe, setActiveAccount } from "@/lib/trading.functions";
 
 const NAV = [
   { to: "/", label: "Trade", icon: TrendingUp },
+  { to: "/arbitrage", label: "AI Arbitrage Bot", icon: Bot },
   { to: "/history", label: "History", icon: History },
   { to: "/cashier", label: "Cashier", icon: Wallet },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/alerts", label: "Price Alerts", icon: BellRing },
+  { to: "/verification", label: "Verification", icon: FileCheck },
   { to: "/support", label: "Support", icon: LifeBuoy },
   { to: "/education", label: "Education", icon: GraduationCap },
   { to: "/security", label: "Security", icon: ShieldCheck },

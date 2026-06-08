@@ -41,6 +41,117 @@ export type Database = {
         }
         Relationships: []
       }
+      arbitrage_signals: {
+        Row: {
+          account_kind: string
+          action: string
+          confidence: number
+          created_at: string
+          estimated_pnl: number
+          exchange_buy: string
+          exchange_sell: string
+          id: string
+          price_buy: number
+          price_sell: number
+          qty: number
+          spread_pct: number
+          status: string
+          symbol: string
+          user_id: string
+        }
+        Insert: {
+          account_kind?: string
+          action?: string
+          confidence?: number
+          created_at?: string
+          estimated_pnl?: number
+          exchange_buy: string
+          exchange_sell: string
+          id?: string
+          price_buy: number
+          price_sell: number
+          qty?: number
+          spread_pct: number
+          status?: string
+          symbol: string
+          user_id: string
+        }
+        Update: {
+          account_kind?: string
+          action?: string
+          confidence?: number
+          created_at?: string
+          estimated_pnl?: number
+          exchange_buy?: string
+          exchange_sell?: string
+          id?: string
+          price_buy?: number
+          price_sell?: number
+          qty?: number
+          spread_pct?: number
+          status?: string
+          symbol?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      kyc_submissions: {
+        Row: {
+          address_doc_path: string | null
+          address_line: string
+          city: string
+          country: string
+          created_at: string
+          date_of_birth: string | null
+          full_name: string
+          id: string
+          id_doc_path: string | null
+          id_doc_type: string
+          notes: string | null
+          postal_code: string | null
+          selfie_path: string | null
+          status: Database["public"]["Enums"]["kyc_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address_doc_path?: string | null
+          address_line: string
+          city: string
+          country: string
+          created_at?: string
+          date_of_birth?: string | null
+          full_name: string
+          id?: string
+          id_doc_path?: string | null
+          id_doc_type: string
+          notes?: string | null
+          postal_code?: string | null
+          selfie_path?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address_doc_path?: string | null
+          address_line?: string
+          city?: string
+          country?: string
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string
+          id?: string
+          id_doc_path?: string | null
+          id_doc_type?: string
+          notes?: string | null
+          postal_code?: string | null
+          selfie_path?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -271,6 +382,7 @@ export type Database = {
     Enums: {
       account_kind: "real" | "demo"
       alert_condition: "above" | "below"
+      kyc_status: "pending" | "approved" | "rejected"
       ticket_status: "open" | "pending" | "resolved"
       trade_side: "buy" | "sell"
       trade_status: "open" | "closed" | "cancelled"
@@ -405,6 +517,7 @@ export const Constants = {
     Enums: {
       account_kind: ["real", "demo"],
       alert_condition: ["above", "below"],
+      kyc_status: ["pending", "approved", "rejected"],
       ticket_status: ["open", "pending", "resolved"],
       trade_side: ["buy", "sell"],
       trade_status: ["open", "closed", "cancelled"],

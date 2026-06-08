@@ -75,14 +75,38 @@ function TradeScreen() {
     staleTime: 10_000,
   });
 
-  const candles: Candle[] = useMemo(() => {
+  const baseCandles: Candle[] = useMemo(() => {
     if (!ohlc.data || ohlc.data.length === 0) return [];
     return ohlc.data.slice(-60).map(([t, o, h, l, c]) => ({ t, o, h, l, c }));
   }, [ohlc.data]);
 
+  // Synthetic live tick: ensures the chart visibly moves between CoinGecko
+  // refreshes (which cache for ~60s) so the market never appears frozen.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 900);
+    return () => clearInterval(id);
+  }, []);
+
   const livePrice = live.data?.[coin.id]?.usd;
   const change24 = live.data?.[coin.id]?.usd_24h_change ?? coin.price_change_percentage_24h ?? 0;
-  const price = livePrice ?? candles[candles.length - 1]?.c ?? coin.current_price ?? 0;
+  const lastClose = baseCandles[baseCandles.length - 1]?.c ?? livePrice ?? coin.current_price ?? 0;
+
+  const candles: Candle[] = useMemo(() => {
+    if (baseCandles.length === 0) return [];
+    const next = baseCandles.slice();
+    const last = { ...next[next.length - 1] };
+    const anchor = livePrice ?? last.c;
+    const jitter = anchor * 0.0006 * (Math.sin(tick * 0.7) + (Math.random() - 0.5));
+    last.c = +(anchor + jitter).toFixed(8);
+    last.h = Math.max(last.h, last.c);
+    last.l = Math.min(last.l, last.c);
+    next[next.length - 1] = last;
+    return next;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseCandles, livePrice, tick]);
+
+  const price = candles[candles.length - 1]?.c ?? lastClose;
 
   const stats = useMemo(() => {
     if (candles.length === 0) return { price, change: change24, high: price, low: price, bull: change24 >= 0 };

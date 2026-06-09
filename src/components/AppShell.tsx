@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMe, setActiveAccount } from "@/lib/trading.functions";
 
 const NAV = [
-  { to: "/", label: "Trade", icon: TrendingUp },
+  { to: "/trade", label: "Trade", icon: TrendingUp },
   { to: "/arbitrage", label: "AI Arbitrage Bot", icon: Bot },
   { to: "/history", label: "History", icon: History },
   { to: "/cashier", label: "Cashier", icon: Wallet },

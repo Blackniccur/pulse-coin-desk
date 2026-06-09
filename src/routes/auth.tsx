@@ -30,7 +30,7 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/" });
+      if (data.session) navigate({ to: "/trade" });
     });
   }, [navigate]);
 
@@ -52,7 +52,7 @@ function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword(p.data);
         if (error) throw error;
       }
-      navigate({ to: "/" });
+      navigate({ to: "/trade" });
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Authentication failed");
     } finally {

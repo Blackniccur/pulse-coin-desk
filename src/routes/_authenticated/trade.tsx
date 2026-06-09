@@ -11,7 +11,7 @@ import { CoinPicker } from "@/components/CoinPicker";
 import { placeTrade } from "@/lib/trading.functions";
 import { fetchOHLC, fetchSimplePrice, type CoinMeta } from "@/lib/coingecko";
 
-export const Route = createFileRoute("/_authenticated/")({
+export const Route = createFileRoute("/_authenticated/trade")({
   component: TradeScreen,
 });
 

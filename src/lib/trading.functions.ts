@@ -27,6 +27,27 @@ export const setActiveAccount = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const updateProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      display_name: z.string().trim().min(1).max(80),
+      avatar_url: z.string().trim().url().max(500).optional().or(z.literal("")),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("profiles")
+      .update({
+        display_name: data.display_name,
+        avatar_url: data.avatar_url || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---------- Trades ----------
 export const placeTrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

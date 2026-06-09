@@ -54,7 +54,7 @@ function ArbitragePage() {
   async function onExecute(id: string) {
     try {
       const res = await execute({ data: { id } });
-      toast.success(`Demo trade closed: ${res.pnl >= 0 ? "+" : ""}$${res.pnl.toFixed(2)}`);
+      toast.success(`${res.kind === "real" ? "Real" : "Demo"} trade closed: ${res.pnl >= 0 ? "+" : ""}$${res.pnl.toFixed(2)}`);
       await qc.invalidateQueries({ queryKey: ["arbSignals"] });
       await qc.invalidateQueries({ queryKey: ["me"] });
     } catch (e: unknown) {
@@ -107,7 +107,7 @@ function ArbitragePage() {
 
         {isReal && (
           <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-3 text-xs text-yellow-200">
-            ⚠ You're on the <strong>Real account</strong>. Bot executes simulated trades on Demo only — these are <strong>recommended actions</strong> for you to review.
+            ⚠ You're on the <strong>Real account</strong>. Executing a signal will settle PnL against your real balance.
           </div>
         )}
 
@@ -208,7 +208,7 @@ function SignalCard({ s, onExecute, onDismiss, isReal }: { s: Signal; onExecute:
       <div className="flex gap-2">
         <button onClick={onExecute}
           className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
-          {isReal ? "Run on demo" : "Execute on demo"}
+          {isReal ? "Execute on real" : "Execute on demo"}
         </button>
         <button onClick={onDismiss} className="h-10 px-4 rounded-lg bg-accent text-xs text-muted-foreground">Skip</button>
       </div>

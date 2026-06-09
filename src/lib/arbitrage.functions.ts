@@ -73,23 +73,26 @@ export const executeSignal = createServerFn({ method: "POST" })
     if (!sig) throw new Error("Signal not found");
     if (sig.status !== "open") throw new Error("Already executed");
 
-    // Always run sim on demo account
-    const { data: demo } = await supabase.from("accounts")
-      .select("*").eq("user_id", userId).eq("kind", "demo").maybeSingle();
-    if (!demo) throw new Error("Demo account missing");
+    // Execute on the user's currently active account (real or demo)
+    const { data: profile } = await supabase.from("profiles")
+      .select("active_account").eq("id", userId).maybeSingle();
+    const kind = profile?.active_account ?? "demo";
+    const { data: acct } = await supabase.from("accounts")
+      .select("*").eq("user_id", userId).eq("kind", kind).maybeSingle();
+    if (!acct) throw new Error("Account not found");
     const pnl = Number(sig.estimated_pnl);
-    const newBal = Number(demo.balance) + pnl;
-    await supabase.from("accounts").update({ balance: newBal }).eq("id", demo.id);
+    const newBal = Number(acct.balance) + pnl;
+    await supabase.from("accounts").update({ balance: newBal }).eq("id", acct.id);
     await supabase.from("arbitrage_signals").update({
-      action: "executed", status: "closed",
+      action: "executed", status: "closed", account_kind: kind,
     }).eq("id", sig.id);
     await supabase.from("notifications").insert({
       user_id: userId,
-      title: `Arb bot ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} on ${sig.symbol}`,
+      title: `Arb bot ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} on ${sig.symbol} (${kind})`,
       body: `Bought on ${sig.exchange_buy}, sold on ${sig.exchange_sell} (${sig.spread_pct}% spread).`,
       kind: "arbitrage",
     });
-    return { ok: true, pnl, balance: newBal };
+    return { ok: true, pnl, balance: newBal, kind };
   });
 
 export const dismissSignal = createServerFn({ method: "POST" })

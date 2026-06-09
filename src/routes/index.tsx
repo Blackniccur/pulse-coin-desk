@@ -41,8 +41,14 @@ function Landing() {
             <a href="#about" className="hover:text-foreground">About</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground px-3 py-2">Login</Link>
-            <Link to="/auth" className="text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 hover:opacity-90">Sign Up</Link>
+            {signedIn ? (
+              <Link to="/trade" className="text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 hover:opacity-90">Open app</Link>
+            ) : (
+              <>
+                <Link to="/auth" className="text-sm text-muted-foreground hover:text-foreground px-3 py-2">Login</Link>
+                <Link to="/auth" className="text-sm font-semibold bg-primary text-primary-foreground rounded-lg px-4 py-2 hover:opacity-90">Sign Up</Link>
+              </>
+            )}
           </div>
         </div>
       </header>

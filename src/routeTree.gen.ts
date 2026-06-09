@@ -17,6 +17,7 @@ import { Route as AuthenticatedTradeRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedSecurityRouteImport } from './routes/_authenticated/security'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedEducationRouteImport } from './routes/_authenticated/education'
 import { Route as AuthenticatedCashierRouteImport } from './routes/_authenticated/cashier'
@@ -63,6 +64,11 @@ const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/cashier': typeof AuthenticatedCashierRoute
   '/education': typeof AuthenticatedEducationRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/security': typeof AuthenticatedSecurityRoute
   '/support': typeof AuthenticatedSupportRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/cashier': typeof AuthenticatedCashierRoute
   '/education': typeof AuthenticatedEducationRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/security': typeof AuthenticatedSecurityRoute
   '/support': typeof AuthenticatedSupportRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/_authenticated/cashier': typeof AuthenticatedCashierRoute
   '/_authenticated/education': typeof AuthenticatedEducationRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/security': typeof AuthenticatedSecurityRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/cashier'
     | '/education'
     | '/history'
+    | '/profile'
     | '/reports'
     | '/security'
     | '/support'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/cashier'
     | '/education'
     | '/history'
+    | '/profile'
     | '/reports'
     | '/security'
     | '/support'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cashier'
     | '/_authenticated/education'
     | '/_authenticated/history'
+    | '/_authenticated/profile'
     | '/_authenticated/reports'
     | '/_authenticated/security'
     | '/_authenticated/support'
@@ -243,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/history': {
       id: '/_authenticated/history'
       path: '/history'
@@ -287,6 +306,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCashierRoute: typeof AuthenticatedCashierRoute
   AuthenticatedEducationRoute: typeof AuthenticatedEducationRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSecurityRoute: typeof AuthenticatedSecurityRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
@@ -300,6 +320,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCashierRoute: AuthenticatedCashierRoute,
   AuthenticatedEducationRoute: AuthenticatedEducationRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSecurityRoute: AuthenticatedSecurityRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,

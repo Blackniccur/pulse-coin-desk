@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Menu, X, TrendingUp, History, Wallet, BarChart3, BellRing,
   LifeBuoy, GraduationCap, ShieldCheck, LogOut, Bell, ChevronRight,
-  Bot, FileCheck,
+  Bot, FileCheck, User,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -18,6 +18,7 @@ const NAV = [
   { to: "/cashier", label: "Cashier", icon: Wallet },
   { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/alerts", label: "Price Alerts", icon: BellRing },
+  { to: "/profile", label: "Profile", icon: User },
   { to: "/verification", label: "Verification", icon: FileCheck },
   { to: "/support", label: "Support", icon: LifeBuoy },
   { to: "/education", label: "Education", icon: GraduationCap },

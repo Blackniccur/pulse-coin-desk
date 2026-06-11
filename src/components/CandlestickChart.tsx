@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 
 export type Candle = { o: number; h: number; l: number; c: number; t: number };
+export type TradeMarker = { t: number; price: number; side: "buy" | "sell"; qty?: number };
 
 function seed(count: number, base: number): Candle[] {
   const out: Candle[] = [];
   let price = base;
-  // deterministic seed so SSR and first client render match
   let s = 1337;
   const rand = () => {
     s = (s * 1664525 + 1013904223) % 0x100000000;
@@ -37,7 +37,6 @@ export function useLiveCandles(base = 67_420) {
         last.l = Math.min(last.l, last.c);
         next[next.length - 1] = last;
 
-        // roll a new candle every ~6 ticks
         if (Math.random() < 0.18) {
           const o = last.c;
           next.push({ o, h: o, l: o, c: o, t: Date.now() });
@@ -52,7 +51,13 @@ export function useLiveCandles(base = 67_420) {
   return candles;
 }
 
-export function CandlestickChart({ candles }: { candles: Candle[] }) {
+export function CandlestickChart({
+  candles,
+  markers = [],
+}: {
+  candles: Candle[];
+  markers?: TradeMarker[];
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -73,14 +78,14 @@ export function CandlestickChart({ candles }: { candles: Candle[] }) {
 
     ctx.clearRect(0, 0, W, H);
 
-    const highs = candles.map((c) => c.h);
-    const lows = candles.map((c) => c.l);
-    const hi = Math.max(...highs);
-    const lo = Math.min(...lows);
+    const allLows = candles.map((c) => c.l);
+    const allHighs = candles.map((c) => c.h);
+    const markerPrices = markers.map((m) => m.price);
+    const hi = Math.max(...allHighs, ...markerPrices);
+    const lo = Math.min(...allLows, ...markerPrices);
     const range = hi - lo || 1;
     const y = (p: number) => padY + ((hi - p) / range) * (H - padY * 2);
 
-    // grid
     ctx.strokeStyle = "rgba(255,255,255,0.05)";
     ctx.lineWidth = 1;
     for (let i = 1; i < 5; i++) {
@@ -91,14 +96,13 @@ export function CandlestickChart({ candles }: { candles: Candle[] }) {
       ctx.stroke();
     }
 
-    // price labels
     ctx.fillStyle = "rgba(255,255,255,0.45)";
     ctx.font = "10px JetBrains Mono, monospace";
     ctx.textAlign = "left";
     for (let i = 0; i <= 4; i++) {
       const p = hi - (range / 4) * i;
       const yy = padY + ((H - padY * 2) / 4) * i;
-      ctx.fillText(p.toFixed(0), chartW + 6, yy + 3);
+      ctx.fillText(p.toFixed(p < 1 ? 4 : 0), chartW + 6, yy + 3);
     }
 
     const cw = chartW / candles.length;
@@ -111,12 +115,10 @@ export function CandlestickChart({ candles }: { candles: Candle[] }) {
       ctx.strokeStyle = color;
       ctx.fillStyle = color;
       ctx.lineWidth = 1;
-      // wick
       ctx.beginPath();
       ctx.moveTo(x, y(c.h));
       ctx.lineTo(x, y(c.l));
       ctx.stroke();
-      // body
       const yo = y(c.o);
       const yc = y(c.c);
       const top = Math.min(yo, yc);
@@ -134,14 +136,54 @@ export function CandlestickChart({ candles }: { candles: Candle[] }) {
     ctx.lineTo(chartW, ly);
     ctx.stroke();
     ctx.setLineDash([]);
-
-    // last price tag
     ctx.fillStyle = last.c >= last.o ? "#3fdca0" : "#f25f5c";
     ctx.fillRect(chartW, ly - 9, padR, 18);
     ctx.fillStyle = "#0c1018";
     ctx.font = "bold 10px JetBrains Mono, monospace";
-    ctx.fillText(last.c.toFixed(2), chartW + 4, ly + 3);
-  }, [candles]);
+    ctx.fillText(last.c.toFixed(last.c < 1 ? 4 : 2), chartW + 4, ly + 3);
+
+    // trade markers (forex-style entry arrows)
+    if (markers.length && candles.length) {
+      const tMin = candles[0].t;
+      const tMax = candles[candles.length - 1].t;
+      const tSpan = tMax - tMin || 1;
+      markers.forEach((m) => {
+        // map time → x: clamp recent trades to the rightmost candle
+        const tt = Math.max(tMin, Math.min(tMax, m.t));
+        const x = ((tt - tMin) / tSpan) * (chartW - cw) + cw / 2;
+        const yp = y(m.price);
+        const isBuy = m.side === "buy";
+        const col = isBuy ? "#3fdca0" : "#f25f5c";
+        // dashed horizontal line at trade price
+        ctx.strokeStyle = col + "aa";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x, yp);
+        ctx.lineTo(chartW, yp);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // triangle marker pointing up for buy (from below), down for sell (from above)
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        if (isBuy) {
+          ctx.moveTo(x, yp + 2);
+          ctx.lineTo(x - 5, yp + 11);
+          ctx.lineTo(x + 5, yp + 11);
+        } else {
+          ctx.moveTo(x, yp - 2);
+          ctx.lineTo(x - 5, yp - 11);
+          ctx.lineTo(x + 5, yp - 11);
+        }
+        ctx.closePath();
+        ctx.fill();
+        // label
+        ctx.fillStyle = col;
+        ctx.font = "bold 9px JetBrains Mono, monospace";
+        ctx.fillText(isBuy ? "B" : "S", x - 3, isBuy ? yp + 21 : yp - 14);
+      });
+    }
+  }, [candles, markers]);
 
   return <canvas ref={ref} className="w-full h-full block" />;
 }

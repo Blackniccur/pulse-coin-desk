@@ -21,6 +21,13 @@ function Landing() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSignedIn(!!data.session));
   }, []);
+  // Deep-link targets; on /auth they round-trip via ?redirect=...
+  const tradeBuy = { to: "/trade" as const, search: { coin: "bitcoin", side: "buy" as const, type: "market" as const } };
+  const tradeSell = { to: "/trade" as const, search: { coin: "bitcoin", side: "sell" as const, type: "market" as const } };
+  const arb = { to: "/arbitrage" as const };
+  const authWith = (target: string) => ({ to: "/auth" as const, search: { redirect: target } });
+  const startTrading = signedIn ? tradeBuy : authWith("/trade?coin=bitcoin&side=buy&type=market");
+  const arbCta = signedIn ? arb : authWith("/arbitrage");
   const primaryHref = signedIn ? "/trade" : "/auth";
 
   return (
@@ -76,13 +83,16 @@ function Landing() {
                 Advanced tools. Precision data. Professional performance — on every device.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link to={primaryHref} className="group inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold rounded-xl px-6 py-3.5 text-sm tracking-wide hover:opacity-90 shadow-lg shadow-primary/30">
-                  START TRADING NOW
+                <Link {...startTrading} className="group inline-flex items-center gap-2 bg-bull text-primary-foreground font-semibold rounded-xl px-6 py-3.5 text-sm tracking-wide hover:opacity-90 shadow-lg shadow-bull/30">
+                  BUY BITCOIN
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition" />
                 </Link>
-                <a href="#platform" className="inline-flex items-center gap-2 border border-border bg-surface/60 rounded-xl px-6 py-3.5 text-sm font-medium hover:bg-surface">
-                  Explore platform
-                </a>
+                <Link {...(signedIn ? tradeSell : authWith("/trade?coin=bitcoin&side=sell&type=market"))} className="inline-flex items-center gap-2 bg-bear/90 text-white font-semibold rounded-xl px-6 py-3.5 text-sm tracking-wide hover:opacity-90">
+                  SELL
+                </Link>
+                <Link {...arbCta} className="inline-flex items-center gap-2 border border-primary/40 bg-primary/10 text-primary rounded-xl px-6 py-3.5 text-sm font-semibold hover:bg-primary/20">
+                  <Bot className="h-4 w-4" /> Run AI Arbitrage
+                </Link>
               </div>
               <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
                 <Stat value="500+" label="Coins" />

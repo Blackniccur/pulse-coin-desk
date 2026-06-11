@@ -1,17 +1,27 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { ArrowUpRight, ArrowDownRight, ChevronDown, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { CandlestickChart, type Candle } from "@/components/CandlestickChart";
+import { CandlestickChart, type Candle, type TradeMarker } from "@/components/CandlestickChart";
 import { DepositSheet } from "@/components/DepositSheet";
-import { AppShell, useMe } from "@/components/AppShell";
+import { AppShell } from "@/components/AppShell";
+import { AccountSwitcher } from "@/components/AccountSwitcher";
+import { KycBanner, useCanTrade, KycLockedCard } from "@/components/KycGate";
 import { CoinPicker } from "@/components/CoinPicker";
-import { placeTrade } from "@/lib/trading.functions";
-import { fetchOHLC, fetchSimplePrice, type CoinMeta } from "@/lib/coingecko";
+import { placeTrade, listTrades } from "@/lib/trading.functions";
+import { fetchOHLC, fetchSimplePrice, fetchTopCoins, type CoinMeta } from "@/lib/coingecko";
+
+const tradeSearchSchema = z.object({
+  coin: z.string().optional(),
+  side: z.enum(["buy", "sell"]).optional(),
+  type: z.enum(["market", "limit", "stop"]).optional(),
+});
 
 export const Route = createFileRoute("/_authenticated/trade")({
+  validateSearch: (s) => tradeSearchSchema.parse(s),
   component: TradeScreen,
 });
 
@@ -38,6 +48,9 @@ const ORDER_TYPES = ["market", "limit", "stop"] as const;
 type OrderType = (typeof ORDER_TYPES)[number];
 
 function TradeScreen() {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+
   const [coin, setCoin] = useState<CoinMeta>(() => {
     if (typeof window === "undefined") return DEFAULT_COIN;
     try {
@@ -51,11 +64,27 @@ function TradeScreen() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [depositOpen, setDepositOpen] = useState(false);
   const [qty, setQty] = useState("0.01");
-  const [orderType, setOrderType] = useState<OrderType>("market");
+  const [orderType, setOrderType] = useState<OrderType>(search.type ?? "market");
   const [triggerPrice, setTriggerPrice] = useState("");
-  const me = useMe();
   const qc = useQueryClient();
   const trade = useServerFn(placeTrade);
+  const listTradesFn = useServerFn(listTrades);
+  const { canTrade } = useCanTrade();
+
+  // Deep-link: if ?coin=<id> is provided, hydrate from CoinGecko once.
+  useEffect(() => {
+    if (!search.coin || search.coin === coin.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const top = await fetchTopCoins(100);
+        const found = top.find((c) => c.id === search.coin || c.symbol === search.coin);
+        if (found && !cancelled) setCoin(found);
+      } catch { /* ignore */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search.coin]);
 
   useEffect(() => {
     try { localStorage.setItem("activeCoin", JSON.stringify(coin)); } catch { /* ignore */ }
@@ -75,13 +104,17 @@ function TradeScreen() {
     staleTime: 10_000,
   });
 
+  const tradesQ = useQuery({
+    queryKey: ["myTrades"],
+    queryFn: () => listTradesFn(),
+    staleTime: 10_000,
+  });
+
   const baseCandles: Candle[] = useMemo(() => {
     if (!ohlc.data || ohlc.data.length === 0) return [];
     return ohlc.data.slice(-60).map(([t, o, h, l, c]) => ({ t, o, h, l, c }));
   }, [ohlc.data]);
 
-  // Synthetic live tick: ensures the chart visibly moves between CoinGecko
-  // refreshes (which cache for ~60s) so the market never appears frozen.
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 900);
@@ -115,11 +148,30 @@ function TradeScreen() {
     return { price, change: change24, high, low, bull: change24 >= 0 };
   }, [candles, price, change24]);
 
-  const isDemo = me.data?.profile?.active_account === "demo";
   const symbol = `${coin.symbol.toUpperCase()}/USDT`;
   const dp = price < 1 ? 6 : price < 100 ? 4 : 2;
 
+  // Build trade markers for this symbol within the chart's time window
+  const markers: TradeMarker[] = useMemo(() => {
+    if (!tradesQ.data || candles.length === 0) return [];
+    const tMin = candles[0].t;
+    return tradesQ.data
+      .filter((t) => t.symbol === symbol && t.status === "closed")
+      .slice(0, 25)
+      .map((t) => ({
+        t: Math.max(tMin, new Date(t.created_at).getTime()),
+        price: Number(t.price),
+        side: t.side as "buy" | "sell",
+        qty: Number(t.qty),
+      }));
+  }, [tradesQ.data, symbol, candles]);
+
   async function execute(side: "buy" | "sell") {
+    if (!canTrade) {
+      toast.error("Complete identity & address verification first");
+      navigate({ to: "/verification" });
+      return;
+    }
     const q = parseFloat(qty);
     if (!q || q <= 0) return toast.error("Enter a valid quantity");
     const tp = orderType !== "market" ? parseFloat(triggerPrice) : undefined;
@@ -134,6 +186,7 @@ function TradeScreen() {
         },
       });
       await qc.invalidateQueries({ queryKey: ["me"] });
+      await qc.invalidateQueries({ queryKey: ["myTrades"] });
       if ("pending" in res && res.pending) {
         toast.success(`${orderType.toUpperCase()} order placed: ${side} ${q} ${coin.symbol.toUpperCase()} @ $${tp?.toFixed(dp)}`);
       } else {
@@ -144,6 +197,9 @@ function TradeScreen() {
     }
   }
 
+  // Preselect side from deep link by scrolling-to / highlighting the CTA
+  const dlSide = search.side;
+
   return (
     <AppShell
       right={
@@ -153,30 +209,29 @@ function TradeScreen() {
       }
     >
       <div className="pb-56">
-        <div className="px-5 pt-3 pb-3">
-          {isDemo && (
-            <div className="mb-3 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-bear bg-bear/10 border border-bear/30 px-2 py-1 rounded-full">
-              Demo mode • virtual funds
+        <div className="px-5 pt-3 pb-3 space-y-3">
+          <AccountSwitcher />
+          <KycBanner />
+          <div>
+            <button onClick={() => setPickerOpen(true)} className="flex items-center gap-2 group">
+              <img src={coin.image} alt={coin.symbol} className="h-8 w-8 rounded-full" />
+              <div className="text-lg font-semibold uppercase">{coin.symbol}<span className="text-muted-foreground">/USDT</span></div>
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <div className="flex items-baseline gap-3 mt-2">
+              <div className="text-4xl font-semibold tabular tracking-tight">
+                ${price.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp })}
+              </div>
+              <div className={`flex items-center gap-1 text-sm font-medium tabular px-2 py-0.5 rounded-md ${stats.bull ? "text-bull bg-bull/10" : "text-bear bg-bear/10"}`}>
+                {stats.bull ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+                {stats.bull ? "+" : ""}{stats.change.toFixed(2)}%
+              </div>
             </div>
-          )}
-          <button onClick={() => setPickerOpen(true)} className="flex items-center gap-2 group">
-            <img src={coin.image} alt={coin.symbol} className="h-8 w-8 rounded-full" />
-            <div className="text-lg font-semibold uppercase">{coin.symbol}<span className="text-muted-foreground">/USDT</span></div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <div className="flex items-baseline gap-3 mt-2">
-            <div className="text-4xl font-semibold tabular tracking-tight">
-              ${price.toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp })}
+            <div className="flex gap-4 mt-3 text-[11px] text-muted-foreground">
+              <span>High <span className="text-foreground tabular ml-1">${stats.high.toFixed(dp === 6 ? 4 : 2)}</span></span>
+              <span>Low <span className="text-foreground tabular ml-1">${stats.low.toFixed(dp === 6 ? 4 : 2)}</span></span>
+              <span className="text-bull">● Live</span>
             </div>
-            <div className={`flex items-center gap-1 text-sm font-medium tabular px-2 py-0.5 rounded-md ${stats.bull ? "text-bull bg-bull/10" : "text-bear bg-bear/10"}`}>
-              {stats.bull ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
-              {stats.bull ? "+" : ""}{stats.change.toFixed(2)}%
-            </div>
-          </div>
-          <div className="flex gap-4 mt-3 text-[11px] text-muted-foreground">
-            <span>High <span className="text-foreground tabular ml-1">${stats.high.toFixed(dp === 6 ? 4 : 2)}</span></span>
-            <span>Low <span className="text-foreground tabular ml-1">${stats.low.toFixed(dp === 6 ? 4 : 2)}</span></span>
-            <span className="text-bull">● Live</span>
           </div>
         </div>
 
@@ -190,7 +245,7 @@ function TradeScreen() {
 
         <div className="h-[320px] px-2 grid-bg">
           {candles.length > 0 ? (
-            <CandlestickChart candles={candles} />
+            <CandlestickChart candles={candles} markers={markers} />
           ) : (
             <div className="h-full grid place-items-center text-xs text-muted-foreground">
               {ohlc.isLoading ? "Loading chart…" : ohlc.isError ? "Chart unavailable (rate limit)" : "No data"}
@@ -210,6 +265,8 @@ function TradeScreen() {
         </div>
 
         <div className="px-5 mt-2 space-y-3">
+          {!canTrade && <KycLockedCard />}
+
           <div className="flex gap-1 bg-surface border border-border rounded-lg p-1">
             {ORDER_TYPES.map((t) => (
               <button
@@ -252,10 +309,18 @@ function TradeScreen() {
 
       <div className="fixed bottom-0 inset-x-0 bg-gradient-to-t from-background via-background to-transparent pt-6 pb-5 px-5">
         <div className="max-w-md mx-auto grid grid-cols-2 gap-3">
-          <button onClick={() => execute("buy")} className="h-14 rounded-2xl bg-bull text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-bull active:scale-[0.98] transition-transform">
+          <button
+            onClick={() => execute("buy")}
+            disabled={!canTrade}
+            className={`h-14 rounded-2xl bg-bull text-primary-foreground font-semibold flex items-center justify-center gap-2 glow-bull active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed ${dlSide === "buy" ? "ring-2 ring-bull/60" : ""}`}
+          >
             <ArrowUpRight className="h-5 w-5" /> Buy {coin.symbol.toUpperCase()}
           </button>
-          <button onClick={() => execute("sell")} className="h-14 rounded-2xl bg-bear text-white font-semibold flex items-center justify-center gap-2 glow-bear active:scale-[0.98] transition-transform">
+          <button
+            onClick={() => execute("sell")}
+            disabled={!canTrade}
+            className={`h-14 rounded-2xl bg-bear text-white font-semibold flex items-center justify-center gap-2 glow-bear active:scale-[0.98] transition-transform disabled:opacity-50 disabled:cursor-not-allowed ${dlSide === "sell" ? "ring-2 ring-bear/60" : ""}`}
+          >
             <ArrowDownRight className="h-5 w-5" /> Sell {coin.symbol.toUpperCase()}
           </button>
         </div>

@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Bot, Zap, TrendingUp, ArrowRight, Play, Pause, CheckCircle2, X, Sparkles, Activity } from "lucide-react";
 import { AppShell, useMe } from "@/components/AppShell";
+import { AccountSwitcher } from "@/components/AccountSwitcher";
+import { KycBanner, useCanTrade, KycLockedCard } from "@/components/KycGate";
 import { fetchTopCoins } from "@/lib/coingecko";
 import { scanArbitrage, listSignals, executeSignal, dismissSignal } from "@/lib/arbitrage.functions";
 
@@ -50,8 +52,13 @@ function ArbitragePage() {
   const recent = useMemo(() => (signals.data ?? []).filter((s) => s.status !== "open").slice(0, 10), [signals.data]);
 
   const isReal = me.data?.profile?.active_account === "real";
+  const { canTrade } = useCanTrade();
 
   async function onExecute(id: string) {
+    if (!canTrade) {
+      toast.error("Complete identity & address verification first");
+      return;
+    }
     try {
       const res = await execute({ data: { id } });
       toast.success(`${res.kind === "real" ? "Real" : "Demo"} trade closed: ${res.pnl >= 0 ? "+" : ""}$${res.pnl.toFixed(2)}`);
@@ -69,6 +76,9 @@ function ArbitragePage() {
   return (
     <AppShell title="AI Arbitrage Bot">
       <div className="px-5 py-4 pb-24 space-y-4 max-w-md mx-auto">
+        <AccountSwitcher />
+        <KycBanner />
+        {!canTrade && <KycLockedCard />}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/20 via-primary/5 to-transparent border border-primary/30 p-5">
           <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
           <div className="relative">
@@ -119,7 +129,7 @@ function ArbitragePage() {
             </div>
           )}
           {open.map((s) => (
-            <SignalCard key={s.id} s={s} onExecute={() => onExecute(s.id)} onDismiss={() => onDismiss(s.id)} isReal={isReal} />
+            <SignalCard key={s.id} s={s} onExecute={() => onExecute(s.id)} onDismiss={() => onDismiss(s.id)} isReal={isReal} disabled={!canTrade} />
           ))}
         </div>
 
@@ -170,7 +180,7 @@ type Signal = {
   price_buy: number | string; price_sell: number | string; spread_pct: number | string;
   estimated_pnl: number | string; confidence: number | string; qty: number | string;
 };
-function SignalCard({ s, onExecute, onDismiss, isReal }: { s: Signal; onExecute: () => void; onDismiss: () => void; isReal: boolean }) {
+function SignalCard({ s, onExecute, onDismiss, isReal, disabled }: { s: Signal; onExecute: () => void; onDismiss: () => void; isReal: boolean; disabled?: boolean }) {
   const spread = Number(s.spread_pct);
   const pnl = Number(s.estimated_pnl);
   const conf = Math.round(Number(s.confidence) * 100);
@@ -206,9 +216,9 @@ function SignalCard({ s, onExecute, onDismiss, isReal }: { s: Signal; onExecute:
       </div>
 
       <div className="flex gap-2">
-        <button onClick={onExecute}
-          className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
-          {isReal ? "Execute on real" : "Execute on demo"}
+        <button onClick={onExecute} disabled={disabled}
+          className="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+          {disabled ? "Verify to execute" : isReal ? "Execute on real" : "Execute on demo"}
         </button>
         <button onClick={onDismiss} className="h-10 px-4 rounded-lg bg-accent text-xs text-muted-foreground">Skip</button>
       </div>

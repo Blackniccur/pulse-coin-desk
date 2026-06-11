@@ -6,7 +6,10 @@ import { Loader2, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
+const authSearch = z.object({ redirect: z.string().optional() });
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s) => authSearch.parse(s),
   head: () => ({
     meta: [
       { title: "Sign in — Vertex" },
